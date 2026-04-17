@@ -5,6 +5,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+import seaborn as sns
 
 # -------------------------------------------------
 # Page Configuration
@@ -14,97 +16,6 @@ st.set_page_config(
     page_icon="❤️",
     layout="wide"
 )
-
-# -------------------------------------------------
-# Sidebar
-# -------------------------------------------------
-st.sidebar.title("📌 Project Summary")
-st.sidebar.write("**Project Title:** Heart Disease Prediction Using Supervised Machine Learning")
-st.sidebar.write("**Dataset:** UCI Heart Disease Dataset")
-st.sidebar.write("**Models Compared:** ANN and KNN")
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Model Performance")
-st.sidebar.write("**ANN Accuracy:** 85.87%")
-st.sidebar.write("**KNN Accuracy:** 86.96%")
-st.sidebar.write("**ANN Precision:** 84.55%")
-st.sidebar.write("**KNN Precision:** 86.11%")
-st.sidebar.write("**ANN Recall:** 91.18%")
-st.sidebar.write("**KNN Recall:** 91.18%")
-st.sidebar.write("**ANN F1-Score:** 87.74%")
-st.sidebar.write("**KNN F1-Score:** 88.57%")
-
-st.sidebar.markdown("---")
-st.sidebar.success("✅ Best Model: KNN")
-
-# -------------------------------------------------
-# Main Title
-# -------------------------------------------------
-st.title("❤️ Heart Disease Prediction System")
-st.markdown(
-    """
-    This web application compares the performance of **Artificial Neural Network (ANN)**  
-    and **K-Nearest Neighbors (KNN)** models and predicts the presence of  
-    **heart disease** using either selected model.
-    """
-)
-
-st.markdown("---")
-
-# -------------------------------------------------
-# Comparison Section
-# -------------------------------------------------
-st.subheader("📊 Model Comparison")
-
-# Comparison Table
-comparison_df = pd.DataFrame({
-    "Model": ["ANN", "KNN"],
-    "Accuracy": [0.8587, 0.8696],
-    "Precision": [0.8455, 0.8611],
-    "Recall": [0.9118, 0.9118],
-    "F1-Score": [0.8774, 0.8857]
-})
-
-st.write("### Comparison Table")
-st.table(comparison_df)
-
-# Comparison Bar Chart
-st.write("### Comparison Chart")
-
-chart_df = pd.DataFrame({
-    "Metric": ["Accuracy", "Precision", "Recall", "F1-Score"],
-    "ANN": [0.8587, 0.8455, 0.9118, 0.8774],
-    "KNN": [0.8696, 0.8611, 0.9118, 0.8857]
-})
-
-fig, ax = plt.subplots(figsize=(8, 5))
-
-x = range(len(chart_df["Metric"]))
-width = 0.35
-
-ax.bar([i - width/2 for i in x], chart_df["ANN"], width=width, label="ANN")
-ax.bar([i + width/2 for i in x], chart_df["KNN"], width=width, label="KNN")
-
-ax.set_xticks(list(x))
-ax.set_xticklabels(chart_df["Metric"])
-ax.set_ylim(0.80, 0.95)
-ax.set_ylabel("Score")
-ax.set_title("Performance Comparison of ANN and KNN")
-ax.legend()
-
-st.pyplot(fig)
-
-# Best model explanation
-st.info(
-    """
-    **Interpretation:**  
-    The chart above shows that **KNN** achieved slightly better performance than **ANN**
-    in terms of **accuracy, precision, and F1-score**, while both models obtained the same
-    **recall**. Therefore, **KNN** was selected as the **best model** for this project.
-    """
-)
-
-st.markdown("---")
 
 # -------------------------------------------------
 # Load and preprocess dataset
@@ -143,16 +54,159 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Standardization
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-# Train ANN model
+# -------------------------------------------------
+# Train Models
+# -------------------------------------------------
 ann_model = MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42)
-ann_model.fit(X_train, y_train)
+ann_model.fit(X_train_scaled, y_train)
 
-# Train KNN model
 knn_model = KNeighborsClassifier(n_neighbors=7)
-knn_model.fit(X_train, y_train)
+knn_model.fit(X_train_scaled, y_train)
+
+# Predictions
+y_pred_ann = ann_model.predict(X_test_scaled)
+y_pred_knn = knn_model.predict(X_test_scaled)
+
+# Metrics
+ann_accuracy = accuracy_score(y_test, y_pred_ann)
+ann_precision = precision_score(y_test, y_pred_ann)
+ann_recall = recall_score(y_test, y_pred_ann)
+ann_f1 = f1_score(y_test, y_pred_ann)
+
+knn_accuracy = accuracy_score(y_test, y_pred_knn)
+knn_precision = precision_score(y_test, y_pred_knn)
+knn_recall = recall_score(y_test, y_pred_knn)
+knn_f1 = f1_score(y_test, y_pred_knn)
+
+# Confusion Matrices
+cm_ann = confusion_matrix(y_test, y_pred_ann)
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+
+# -------------------------------------------------
+# Sidebar
+# -------------------------------------------------
+st.sidebar.title("📌 Project Summary")
+st.sidebar.write("**Project Title:** Heart Disease Prediction Using Supervised Machine Learning")
+st.sidebar.write("**Dataset:** UCI Heart Disease Dataset")
+st.sidebar.write("**Models Compared:** ANN and KNN")
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Model Performance")
+st.sidebar.write(f"**ANN Accuracy:** {ann_accuracy:.2%}")
+st.sidebar.write(f"**KNN Accuracy:** {knn_accuracy:.2%}")
+st.sidebar.write(f"**ANN Precision:** {ann_precision:.2%}")
+st.sidebar.write(f"**KNN Precision:** {knn_precision:.2%}")
+st.sidebar.write(f"**ANN Recall:** {ann_recall:.2%}")
+st.sidebar.write(f"**KNN Recall:** {knn_recall:.2%}")
+st.sidebar.write(f"**ANN F1-Score:** {ann_f1:.2%}")
+st.sidebar.write(f"**KNN F1-Score:** {knn_f1:.2%}")
+
+st.sidebar.markdown("---")
+if knn_accuracy > ann_accuracy:
+    st.sidebar.success("✅ Best Model: KNN")
+else:
+    st.sidebar.success("✅ Best Model: ANN")
+
+# -------------------------------------------------
+# Main Title
+# -------------------------------------------------
+st.title("❤️ Heart Disease Prediction System")
+st.markdown(
+    """
+    This web application compares the performance of **Artificial Neural Network (ANN)**  
+    and **K-Nearest Neighbors (KNN)** models and predicts the presence of  
+    **heart disease** using either selected model.
+    """
+)
+
+st.markdown("---")
+
+# -------------------------------------------------
+# Comparison Table
+# -------------------------------------------------
+st.subheader("📋 Model Comparison Table")
+
+comparison_df = pd.DataFrame({
+    "Model": ["ANN", "KNN"],
+    "Accuracy": [ann_accuracy, knn_accuracy],
+    "Precision": [ann_precision, knn_precision],
+    "Recall": [ann_recall, knn_recall],
+    "F1-Score": [ann_f1, knn_f1]
+})
+
+st.dataframe(comparison_df.style.format({
+    "Accuracy": "{:.4f}",
+    "Precision": "{:.4f}",
+    "Recall": "{:.4f}",
+    "F1-Score": "{:.4f}"
+}), use_container_width=True)
+
+# -------------------------------------------------
+# Performance Comparison Bar Chart
+# -------------------------------------------------
+st.subheader("📊 Performance Comparison Chart")
+
+metrics = ["Accuracy", "Precision", "Recall", "F1-Score"]
+ann_scores = [ann_accuracy, ann_precision, ann_recall, ann_f1]
+knn_scores = [knn_accuracy, knn_precision, knn_recall, knn_f1]
+
+fig, ax = plt.subplots(figsize=(10, 5))
+x = range(len(metrics))
+width = 0.35
+
+ax.bar([i - width/2 for i in x], ann_scores, width=width, label="ANN")
+ax.bar([i + width/2 for i in x], knn_scores, width=width, label="KNN")
+
+ax.set_xticks(list(x))
+ax.set_xticklabels(metrics)
+ax.set_ylim(0.80, 0.95)
+ax.set_ylabel("Score")
+ax.set_title("Performance Comparison of ANN and KNN")
+ax.legend()
+
+st.pyplot(fig)
+
+# -------------------------------------------------
+# Confusion Matrices
+# -------------------------------------------------
+st.subheader("📉 Confusion Matrices")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("### ANN Confusion Matrix")
+    fig1, ax1 = plt.subplots()
+    sns.heatmap(cm_ann, annot=True, fmt="d", cmap="Greens",
+                xticklabels=["No Disease", "Disease"],
+                yticklabels=["No Disease", "Disease"], ax=ax1)
+    ax1.set_xlabel("Predicted")
+    ax1.set_ylabel("Actual")
+    st.pyplot(fig1)
+
+with col2:
+    st.write("### KNN Confusion Matrix")
+    fig2, ax2 = plt.subplots()
+    sns.heatmap(cm_knn, annot=True, fmt="d", cmap="Blues",
+                xticklabels=["No Disease", "Disease"],
+                yticklabels=["No Disease", "Disease"], ax=ax2)
+    ax2.set_xlabel("Predicted")
+    ax2.set_ylabel("Actual")
+    st.pyplot(fig2)
+
+# -------------------------------------------------
+# Best Model Explanation
+# -------------------------------------------------
+st.subheader("✅ Best Model Selection")
+
+if knn_accuracy > ann_accuracy:
+    st.success("KNN was selected as the best model because it achieved slightly higher accuracy, precision, and F1-score than ANN, while both models obtained the same recall.")
+else:
+    st.success("ANN was selected as the best model because it achieved slightly better performance than KNN.")
+
+st.markdown("---")
 
 # -------------------------------------------------
 # User Input Section
@@ -203,7 +257,7 @@ input_data = pd.DataFrame({
 # One-hot encode input
 input_encoded = pd.get_dummies(input_data, drop_first=True)
 
-# Align with training data columns
+# Align input with training columns
 input_encoded = input_encoded.reindex(columns=X.columns, fill_value=0)
 
 # Scale input
