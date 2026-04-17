@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 
 # -------------------------------------------------
 # Page Configuration
@@ -21,15 +22,20 @@ st.sidebar.title("📌 Project Summary")
 st.sidebar.write("**Project Title:** Heart Disease Prediction Using Supervised Machine Learning")
 st.sidebar.write("**Dataset:** UCI Heart Disease Dataset")
 st.sidebar.write("**Models Compared:** ANN and KNN")
-st.sidebar.write("**Best Model:** KNN")
-st.sidebar.write("**Best k:** 7")
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Final Results")
+st.sidebar.subheader("📊 Model Performance")
 st.sidebar.write("**ANN Accuracy:** 85.87%")
 st.sidebar.write("**KNN Accuracy:** 86.96%")
+st.sidebar.write("**ANN Precision:** 84.55%")
+st.sidebar.write("**KNN Precision:** 86.11%")
+st.sidebar.write("**ANN Recall:** 91.18%")
+st.sidebar.write("**KNN Recall:** 91.18%")
 st.sidebar.write("**ANN F1-Score:** 87.74%")
 st.sidebar.write("**KNN F1-Score:** 88.57%")
+
+st.sidebar.markdown("---")
+st.sidebar.success("✅ Best Model: KNN")
 
 # -------------------------------------------------
 # Main Title
@@ -37,62 +43,64 @@ st.sidebar.write("**KNN F1-Score:** 88.57%")
 st.title("❤️ Heart Disease Prediction System")
 st.markdown(
     """
-    This web application compares the performance of **Artificial Neural Network (ANN)** and  
-    **K-Nearest Neighbors (KNN)** models and predicts the presence of **heart disease**  
-    using the **best-performing model (KNN)**.
+    This web application compares the performance of **Artificial Neural Network (ANN)**  
+    and **K-Nearest Neighbors (KNN)** models and predicts the presence of  
+    **heart disease** using either selected model.
     """
 )
 
 st.markdown("---")
 
 # -------------------------------------------------
-# Model Comparison Section
+# Comparison Section
 # -------------------------------------------------
 st.subheader("📊 Model Comparison")
 
+# Comparison Table
 comparison_df = pd.DataFrame({
+    "Model": ["ANN", "KNN"],
+    "Accuracy": [0.8587, 0.8696],
+    "Precision": [0.8455, 0.8611],
+    "Recall": [0.9118, 0.9118],
+    "F1-Score": [0.8774, 0.8857]
+})
+
+st.write("### Comparison Table")
+st.table(comparison_df)
+
+# Comparison Bar Chart
+st.write("### Comparison Chart")
+
+chart_df = pd.DataFrame({
     "Metric": ["Accuracy", "Precision", "Recall", "F1-Score"],
     "ANN": [0.8587, 0.8455, 0.9118, 0.8774],
     "KNN": [0.8696, 0.8611, 0.9118, 0.8857]
 })
 
-col1, col2 = st.columns([2, 1])
+fig, ax = plt.subplots(figsize=(8, 5))
 
-with col1:
-    fig, ax = plt.subplots(figsize=(8, 5))
+x = range(len(chart_df["Metric"]))
+width = 0.35
 
-    x = range(len(comparison_df["Metric"]))
-    width = 0.35
+ax.bar([i - width/2 for i in x], chart_df["ANN"], width=width, label="ANN")
+ax.bar([i + width/2 for i in x], chart_df["KNN"], width=width, label="KNN")
 
-    ax.bar([i - width/2 for i in x], comparison_df["ANN"], width=width, label="ANN")
-    ax.bar([i + width/2 for i in x], comparison_df["KNN"], width=width, label="KNN")
+ax.set_xticks(list(x))
+ax.set_xticklabels(chart_df["Metric"])
+ax.set_ylim(0.80, 0.95)
+ax.set_ylabel("Score")
+ax.set_title("Performance Comparison of ANN and KNN")
+ax.legend()
 
-    ax.set_xticks(list(x))
-    ax.set_xticklabels(comparison_df["Metric"])
-    ax.set_ylim(0.80, 0.95)
-    ax.set_ylabel("Score")
-    ax.set_title("Performance Comparison of ANN and KNN")
-    ax.legend()
+st.pyplot(fig)
 
-    st.pyplot(fig)
-
-with col2:
-    st.success("✅ **Selected Model: KNN**")
-    st.info(
-        """
-        **Why KNN?**
-        - Higher Accuracy
-        - Higher Precision
-        - Same Recall
-        - Higher F1-Score
-        """
-    )
-
-st.markdown(
+# Best model explanation
+st.info(
     """
-    The comparison chart shows that **KNN** achieved slightly better performance than **ANN**
+    **Interpretation:**  
+    The chart above shows that **KNN** achieved slightly better performance than **ANN**
     in terms of **accuracy, precision, and F1-score**, while both models obtained the same
-    **recall**. Therefore, **KNN** was selected as the final model for deployment in this application.
+    **recall**. Therefore, **KNN** was selected as the **best model** for this project.
     """
 )
 
@@ -138,14 +146,18 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-# Final KNN model
+# Train ANN model
+ann_model = MLPClassifier(hidden_layer_sizes=(50,), max_iter=500, random_state=42)
+ann_model.fit(X_train, y_train)
+
+# Train KNN model
 knn_model = KNeighborsClassifier(n_neighbors=7)
 knn_model.fit(X_train, y_train)
 
 # -------------------------------------------------
-# Input Section
+# User Input Section
 # -------------------------------------------------
-st.subheader("🩺 Patient Information")
+st.subheader("🩺 Enter Patient Information")
 
 left_col, right_col = st.columns(2)
 
@@ -167,6 +179,9 @@ with right_col:
     ca = st.number_input("Number of Major Vessels Colored by Fluoroscopy", min_value=0, max_value=3, value=0)
     thal = st.selectbox("Thalassemia", ["normal", "fixed defect", "reversable defect"])
 
+# Model selection
+selected_model = st.selectbox("Choose Prediction Model", ["ANN", "KNN"])
+
 # Create input DataFrame
 input_data = pd.DataFrame({
     "age": [age],
@@ -185,35 +200,35 @@ input_data = pd.DataFrame({
     "thal": [thal]
 })
 
-# Encode input
+# One-hot encode input
 input_encoded = pd.get_dummies(input_data, drop_first=True)
 
-# Align columns with training data
+# Align with training data columns
 input_encoded = input_encoded.reindex(columns=X.columns, fill_value=0)
 
 # Scale input
 input_scaled = scaler.transform(input_encoded)
 
-st.markdown("")
-
 # -------------------------------------------------
 # Prediction
 # -------------------------------------------------
 if st.button("🔍 Predict Heart Disease"):
-    prediction = knn_model.predict(input_scaled)[0]
+    if selected_model == "ANN":
+        prediction = ann_model.predict(input_scaled)[0]
+        model_used = "Artificial Neural Network (ANN)"
+    else:
+        prediction = knn_model.predict(input_scaled)[0]
+        model_used = "K-Nearest Neighbors (KNN)"
 
     st.markdown("---")
     st.subheader("📌 Prediction Result")
 
     if prediction == 1:
-        st.error("⚠️ The patient is predicted to have **Heart Disease**.")
+        st.error(f"⚠️ The patient is predicted to have **Heart Disease** using **{model_used}**.")
     else:
-        st.success("✅ The patient is predicted to have **No Heart Disease**.")
+        st.success(f"✅ The patient is predicted to have **No Heart Disease** using **{model_used}**.")
 
-    st.write(
-        "This prediction is generated using the **KNN model (k = 7)**, "
-        "which was selected as the best-performing model in this project."
-    )
+    st.write(f"This prediction is generated using the **{model_used}** model.")
 
     st.subheader("📋 Patient Input Summary")
     st.dataframe(input_data, use_container_width=True)
