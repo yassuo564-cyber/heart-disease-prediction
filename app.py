@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
@@ -14,46 +15,32 @@ st.set_page_config(
 )
 
 # -------------------------------------------------
-# Custom CSS for better appearance
+# Sidebar
 # -------------------------------------------------
-st.markdown("""
-    <style>
-    .main-title {
-        font-size: 36px;
-        font-weight: bold;
-        color: #c62828;
-        text-align: center;
-    }
-    .sub-title {
-        font-size: 18px;
-        text-align: center;
-        color: #555555;
-    }
-    .section-title {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1f4e79;
-        margin-top: 20px;
-    }
-    .box {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #dddddd;
-        margin-bottom: 10px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+st.sidebar.title("📌 Project Summary")
+st.sidebar.write("**Project Title:** Heart Disease Prediction Using Supervised Machine Learning")
+st.sidebar.write("**Dataset:** UCI Heart Disease Dataset")
+st.sidebar.write("**Models Compared:** ANN and KNN")
+st.sidebar.write("**Best Model:** KNN")
+st.sidebar.write("**Best k:** 7")
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Final Results")
+st.sidebar.write("**ANN Accuracy:** 85.87%")
+st.sidebar.write("**KNN Accuracy:** 86.96%")
+st.sidebar.write("**ANN F1-Score:** 87.74%")
+st.sidebar.write("**KNN F1-Score:** 88.57%")
 
 # -------------------------------------------------
-# Title
+# Main Title
 # -------------------------------------------------
-st.markdown('<p class="main-title">❤️ Heart Disease Prediction System</p>', unsafe_allow_html=True)
+st.title("❤️ Heart Disease Prediction System")
 st.markdown(
-    '<p class="sub-title">This web application compares <b>Artificial Neural Network (ANN)</b> and '
-    '<b>K-Nearest Neighbors (KNN)</b> models and predicts the presence of heart disease using the '
-    '<b>best-performing model (KNN)</b>.</p>',
-    unsafe_allow_html=True
+    """
+    This web application compares the performance of **Artificial Neural Network (ANN)** and  
+    **K-Nearest Neighbors (KNN)** models and predicts the presence of **heart disease**  
+    using the **best-performing model (KNN)**.
+    """
 )
 
 st.markdown("---")
@@ -61,42 +48,53 @@ st.markdown("---")
 # -------------------------------------------------
 # Model Comparison Section
 # -------------------------------------------------
-st.markdown('<p class="section-title">📊 Model Comparison</p>', unsafe_allow_html=True)
+st.subheader("📊 Model Comparison")
 
 comparison_df = pd.DataFrame({
-    "Model": ["ANN", "KNN"],
-    "Accuracy": [0.8587, 0.8696],
-    "Precision": [0.8455, 0.8611],
-    "Recall": [0.9118, 0.9118],
-    "F1-Score": [0.8774, 0.8857]
+    "Metric": ["Accuracy", "Precision", "Recall", "F1-Score"],
+    "ANN": [0.8587, 0.8455, 0.9118, 0.8774],
+    "KNN": [0.8696, 0.8611, 0.9118, 0.8857]
 })
 
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.table(comparison_df)
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    x = range(len(comparison_df["Metric"]))
+    width = 0.35
+
+    ax.bar([i - width/2 for i in x], comparison_df["ANN"], width=width, label="ANN")
+    ax.bar([i + width/2 for i in x], comparison_df["KNN"], width=width, label="KNN")
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(comparison_df["Metric"])
+    ax.set_ylim(0.80, 0.95)
+    ax.set_ylabel("Score")
+    ax.set_title("Performance Comparison of ANN and KNN")
+    ax.legend()
+
+    st.pyplot(fig)
 
 with col2:
+    st.success("✅ **Selected Model: KNN**")
     st.info(
-        "✅ **KNN performed slightly better than ANN**\n\n"
-        "- Higher Accuracy\n"
-        "- Higher Precision\n"
-        "- Same Recall\n"
-        "- Higher F1-Score\n\n"
-        "**Selected Model for Deployment: KNN**"
+        """
+        **Why KNN?**
+        - Higher Accuracy
+        - Higher Precision
+        - Same Recall
+        - Higher F1-Score
+        """
     )
 
-metric1, metric2, metric3, metric4, metric5 = st.columns(5)
-metric1.metric("ANN Accuracy", "85.87%")
-metric2.metric("KNN Accuracy", "86.96%")
-metric3.metric("ANN F1-Score", "87.74%")
-metric4.metric("KNN F1-Score", "88.57%")
-metric5.metric("Best Model", "KNN")
-
-st.markdown("""
-The table above shows the performance of ANN and KNN on the UCI Heart Disease dataset.  
-Although both models performed well, **KNN achieved slightly better overall performance** in terms of **accuracy, precision, and F1-score**, while both models obtained the same recall. Therefore, **KNN was selected as the final model** for deployment in this application.
-""")
+st.markdown(
+    """
+    The comparison chart shows that **KNN** achieved slightly better performance than **ANN**
+    in terms of **accuracy, precision, and F1-score**, while both models obtained the same
+    **recall**. Therefore, **KNN** was selected as the final model for deployment in this application.
+    """
+)
 
 st.markdown("---")
 
@@ -145,18 +143,13 @@ knn_model = KNeighborsClassifier(n_neighbors=7)
 knn_model.fit(X_train, y_train)
 
 # -------------------------------------------------
-# User Input Section
+# Input Section
 # -------------------------------------------------
-st.markdown('<p class="section-title">🩺 Enter Patient Information</p>', unsafe_allow_html=True)
+st.subheader("🩺 Patient Information")
 
-st.markdown("""
-Please enter the patient's clinical information below.  
-The system will predict whether the patient is likely to have **heart disease** based on the **KNN model (k = 7)**.
-""")
+left_col, right_col = st.columns(2)
 
-col1, col2 = st.columns(2)
-
-with col1:
+with left_col:
     age = st.number_input("Age", min_value=1, max_value=120, value=50)
     sex = st.selectbox("Sex", ["Male", "Female"])
     dataset = st.selectbox("Dataset Source", ["Cleveland", "Hungary", "Switzerland", "VA Long Beach"])
@@ -165,7 +158,7 @@ with col1:
     chol = st.number_input("Serum Cholesterol (mg/dl)", min_value=100, max_value=600, value=240)
     fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [False, True])
 
-with col2:
+with right_col:
     restecg = st.selectbox("Resting ECG", ["normal", "lv hypertrophy", "st-t abnormality"])
     thalch = st.number_input("Maximum Heart Rate Achieved", min_value=50, max_value=250, value=150)
     exang = st.selectbox("Exercise-Induced Angina", [False, True])
@@ -194,6 +187,8 @@ input_data = pd.DataFrame({
 
 # Encode input
 input_encoded = pd.get_dummies(input_data, drop_first=True)
+
+# Align columns with training data
 input_encoded = input_encoded.reindex(columns=X.columns, fill_value=0)
 
 # Scale input
@@ -202,19 +197,23 @@ input_scaled = scaler.transform(input_encoded)
 st.markdown("")
 
 # -------------------------------------------------
-# Prediction Button
+# Prediction
 # -------------------------------------------------
-if st.button("🔍 Predict"):
+if st.button("🔍 Predict Heart Disease"):
     prediction = knn_model.predict(input_scaled)[0]
 
-    st.markdown('<p class="section-title">📌 Prediction Result</p>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.subheader("📌 Prediction Result")
 
     if prediction == 1:
         st.error("⚠️ The patient is predicted to have **Heart Disease**.")
     else:
         st.success("✅ The patient is predicted to have **No Heart Disease**.")
 
-    st.markdown("""
-    **Note:** This prediction is generated using the **K-Nearest Neighbors (KNN)** model with **k = 7**,  
-    which was selected as the **best-performing model** in this project.
-    """)
+    st.write(
+        "This prediction is generated using the **KNN model (k = 7)**, "
+        "which was selected as the best-performing model in this project."
+    )
+
+    st.subheader("📋 Patient Input Summary")
+    st.dataframe(input_data, use_container_width=True)
